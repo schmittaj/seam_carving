@@ -19,7 +19,6 @@ def find_vert_seam(entropyImage):
     minPath = np.zeros((entropyImage.shape[0], entropyImage.shape[1]))
     for x in range(0, entropyImage.shape[1]):
         minImg[0,x] = entropyImage[0, x, 0] + entropyImage[0, x, 1] + entropyImage[0, x, 2]
-        x = x + 1
 
     # going top to bottom
     for y in range(1, entropyImage.shape[0]):
@@ -28,7 +27,24 @@ def find_vert_seam(entropyImage):
             minent, minpathVal = find_min_vert(entropyImage.shape[1],x,y,minImg)
             minPath[y, x] = minpathVal
             minImg[y, x] = minent + pixent
-            #print(minImg[y, x])
+
+    return minImg, minPath
+# end function
+
+
+def find_horz_seam(entropyImage):
+    minImg = np.zeros((entropyImage.shape[0], entropyImage.shape[1]))
+    minPath = np.zeros((entropyImage.shape[0], entropyImage.shape[1]))
+    for y in range(0, entropyImage.shape[0]):
+        minImg[y,0] = entropyImage[y, 0, 0] + entropyImage[y, 0, 1] + entropyImage[y, 0, 2]
+
+    # going left to right
+    for x in range(1, entropyImage.shape[0]):
+        for y in range(0,entropyImage.shape[1]):
+            pixent = int(entropyImage[y, x, 0]) + int(entropyImage[y, x, 1]) + int(entropyImage[y, x, 2])
+            minent, minpathVal = find_min_horz(entropyImage.shape[1],x,y,minImg)
+            minPath[y, x] = minpathVal
+            minImg[y, x] = minent + pixent
 
     return minImg, minPath
 # end function
@@ -39,6 +55,15 @@ def find_min_vert(maxSize, curPlaceX, curPlaceY, minImg):
     for ctr in range(-1,2):
         if 0 <= ctr + curPlaceX < maxSize:
             values[ctr+1] = int(minImg[curPlaceY-1, ctr+curPlaceX])
+    return min(values), values.index(min(values)) - 1
+# end function
+
+
+def find_min_horz(maxSize, curPlaceX, curPlaceY, minImg):
+    values = [999999, 999999, 999999]
+    for ctr in range(-1,2):
+        if 0 <= ctr + curPlaceY < maxSize:
+            values[ctr+1] = int(minImg[ctr+curPlaceY, curPlaceX-1])
     return min(values), values.index(min(values)) - 1
 # end function
 
