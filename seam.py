@@ -53,7 +53,7 @@ def find_horz_seam(entropyImage):
 def find_min_vert(maxSize, curPlaceX, curPlaceY, minImg):
     values = [999999, 999999, 999999]
     for ctr in range(-1,2):
-        if 0 <= ctr + curPlaceX < maxSize:
+        if 0 < ctr + curPlaceX < maxSize-1: # changed from 0 <= ctr + curPlaceX < maxSize: otherwise it was always taking image edge
             values[ctr+1] = int(minImg[curPlaceY-1, ctr+curPlaceX])
     return min(values), values.index(min(values)) - 1
 # end function
@@ -62,7 +62,7 @@ def find_min_vert(maxSize, curPlaceX, curPlaceY, minImg):
 def find_min_horz(maxSize, curPlaceX, curPlaceY, minImg):
     values = [999999, 999999, 999999]
     for ctr in range(-1,2):
-        if 0 <= ctr + curPlaceY < maxSize:
+        if 0 < ctr + curPlaceY < maxSize-1: # changed from 0 <= ctr + curPlaceX < maxSize: otherwise it was always taking image edge
             values[ctr+1] = int(minImg[ctr+curPlaceY, curPlaceX-1])
     return min(values), values.index(min(values)) - 1
 # end function
