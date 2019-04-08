@@ -25,7 +25,7 @@ def find_vert_seam(entropyImage):
     for y in range(1, entropyImage.shape[0]):
         for x in range(0,entropyImage.shape[1]):
             pixent = int(entropyImage[y, x, 0]) + int(entropyImage[y, x, 1]) + int(entropyImage[y, x, 2])
-            minent, minpathVal = find_min(entropyImage.shape[1],x,y,minImg)
+            minent, minpathVal = find_min_vert(entropyImage.shape[1],x,y,minImg)
             minPath[y, x] = minpathVal
             minImg[y, x] = minent + pixent
             #print(minImg[y, x])
@@ -34,7 +34,7 @@ def find_vert_seam(entropyImage):
 # end function
 
 
-def find_min(maxSize, curPlaceX, curPlaceY, minImg):
+def find_min_vert(maxSize, curPlaceX, curPlaceY, minImg):
     values = [999999, 999999, 999999]
     for ctr in range(-1,2):
         if 0 <= ctr + curPlaceX < maxSize:
