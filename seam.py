@@ -53,7 +53,7 @@ def find_horz_seam(entropyImage):
 def find_min_vert(maxSize, curPlaceX, curPlaceY, minImg):
     values = [999999, 999999, 999999]
     for ctr in range(-1,2):
-        if 0 <= ctr + curPlaceX < maxSize:
+        if 0 < ctr + curPlaceX < maxSize-1: # changed from 0 <= ctr + curPlaceX < maxSize: to ignore edges that will always be 0
             values[ctr+1] = int(minImg[curPlaceY-1, ctr+curPlaceX])
     return min(values), values.index(min(values)) - 1
 # end function
@@ -62,7 +62,7 @@ def find_min_vert(maxSize, curPlaceX, curPlaceY, minImg):
 def find_min_horz(maxSize, curPlaceX, curPlaceY, minImg):
     values = [999999, 999999, 999999]
     for ctr in range(-1,2):
-        if 0 <= ctr + curPlaceY < maxSize:
+        if 0 < ctr + curPlaceY < maxSize-1: # changed from 0 <= ctr + curPlaceX < maxSize: to ignore edges that will always be 0
             values[ctr+1] = int(minImg[ctr+curPlaceY, curPlaceX-1])
     return min(values), values.index(min(values)) - 1
 # end function
@@ -71,7 +71,8 @@ def find_min_horz(maxSize, curPlaceX, curPlaceY, minImg):
 image = load_img("test.jpg")
 
 entropy = entropy_sobel(image)
-minVals, minPath = find_vert_seam(entropy)
+minValsV, minPathV = find_vert_seam(entropy)
+minValsH, minPathH = find_horz_seam(entropy)
 #cv.imshow("",entropy)
 #cv.waitKey(0)
 
@@ -79,25 +80,40 @@ minVals, minPath = find_vert_seam(entropy)
 f = open("output.txt", "w")
 
 f.write("Values:" + "\n")
-for y in range(0,minPath.shape[0]):
+for y in range(0,minPathV.shape[0]):
     line = ""
-    for x in range(0,minPath.shape[1]):
+    for x in range(0,minPathV.shape[1]):
         showVal = int(entropy[y, x, 0]) + int(entropy[y, x, 1]) + int(entropy[y, x, 2])
-        line += "" + str(showVal) + " "
+        line += "" + str(showVal) + "\t"
     f.write(line + "\n")
 
-f.write("\n" + "MinVals:" + "\n")
-for y in range(0,minPath.shape[0]):
+f.write("\n" + "MinValsV:" + "\n")
+for y in range(0,minPathV.shape[0]):
     line = ""
-    for x in range(0,minPath.shape[1]):
-        line += "" + str(minVals[y, x]) + " "
+    for x in range(0,minPathV.shape[1]):
+        line += "" + str(minValsV[y, x]) + "\t\t"
     f.write(line + "\n")
 
-f.write("\n" + "MinPath:" + "\n")
-for y in range(0,minPath.shape[0]):
+f.write("\n" + "MinPathV:" + "\n")
+for y in range(0,minPathV.shape[0]):
     line = ""
-    for x in range(0,minPath.shape[1]):
-        line += "" + str(minPath[y, x]) + " "
+    for x in range(0,minPathV.shape[1]):
+        line += "" + str(minPathV[y, x]) + "\t\t"
     f.write(line + "\n")
+
+f.write("\n" + "MinValsH:" + "\n")
+for y in range(0,minPathH.shape[0]):
+    line = ""
+    for x in range(0,minPathH.shape[1]):
+        line += "" + str(minValsH[y, x]) + "\t\t"
+    f.write(line + "\n")
+
+f.write("\n" + "MinPathH:" + "\n")
+for y in range(0,minPathH.shape[0]):
+    line = ""
+    for x in range(0,minPathH.shape[1]):
+        line += "" + str(minPathH[y, x]) + "\t\t"
+    f.write(line + "\n")
+
 
 f.close()
