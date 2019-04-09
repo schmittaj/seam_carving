@@ -15,8 +15,8 @@ def entropy_sobel(image):
 
 
 def find_vert_seam(entropyImage):
-    minImg = np.zeros((entropyImage.shape[0], entropyImage.shape[1]))
-    minPath = np.zeros((entropyImage.shape[0], entropyImage.shape[1]))
+    minImg = np.zeros((entropyImage.shape[0], entropyImage.shape[1]), dtype=int)
+    minPath = np.zeros((entropyImage.shape[0], entropyImage.shape[1]), dtype=int)
     for x in range(0, entropyImage.shape[1]):
         minImg[0,x] = entropyImage[0, x, 0] + entropyImage[0, x, 1] + entropyImage[0, x, 2]
 
@@ -33,8 +33,8 @@ def find_vert_seam(entropyImage):
 
 
 def find_horz_seam(entropyImage):
-    minImg = np.zeros((entropyImage.shape[0], entropyImage.shape[1]))
-    minPath = np.zeros((entropyImage.shape[0], entropyImage.shape[1]))
+    minImg = np.zeros((entropyImage.shape[0], entropyImage.shape[1]), dtype=int)
+    minPath = np.zeros((entropyImage.shape[0], entropyImage.shape[1]), dtype=int)
     for y in range(0, entropyImage.shape[0]):
         minImg[y,0] = entropyImage[y, 0, 0] + entropyImage[y, 0, 1] + entropyImage[y, 0, 2]
 
@@ -53,7 +53,7 @@ def find_horz_seam(entropyImage):
 def find_min_vert(maxSize, curPlaceX, curPlaceY, minImg):
     values = [999999, 999999, 999999]
     for ctr in range(-1,2):
-        if 0 < ctr + curPlaceX < maxSize-1: # changed from 0 <= ctr + curPlaceX < maxSize: to ignore edges that will always be 0
+        if 0 < ctr + curPlaceX < maxSize-1: # changed from 0 <= ctr + curPlaceX < maxSize: otherwise it was always taking image edge
             values[ctr+1] = int(minImg[curPlaceY-1, ctr+curPlaceX])
     return min(values), values.index(min(values)) - 1
 # end function
@@ -62,17 +62,52 @@ def find_min_vert(maxSize, curPlaceX, curPlaceY, minImg):
 def find_min_horz(maxSize, curPlaceX, curPlaceY, minImg):
     values = [999999, 999999, 999999]
     for ctr in range(-1,2):
-        if 0 < ctr + curPlaceY < maxSize-1: # changed from 0 <= ctr + curPlaceX < maxSize: to ignore edges that will always be 0
+        if 0 < ctr + curPlaceY < maxSize-1: # changed from 0 <= ctr + curPlaceX < maxSize: otherwise it was always taking image edge
             values[ctr+1] = int(minImg[ctr+curPlaceY, curPlaceX-1])
     return min(values), values.index(min(values)) - 1
 # end function
 
+
+# def remove_vert_seam(image, pix2remove):
+#     newImg = np.array(image.shape)
+#     for y in range(0,image.shape[0]):
+#         newX = 0
+#         for x in range(0, image.shape[1]):
+#             if pix2remove[y, x] == 1:
+#                 newX -= 1
+#             else:
+#                 newImg[y, newX] = image[y, x]
+#                 newX += 1
+#     return newImg
+# end function
+
+
+def get_vert_seam(minVals, minPath):
+    path = np.zeros(minPath.shape,dtype=int)
+    minSpot = np.argmin(minVals[minVals.shape[0]-1])
+    for y in range(minVals.shape[0]-1,-1,-1):
+        path[y, minSpot] = 1
+        minSpot = minSpot + minPath[y, minSpot]
+    return path
+# end function
+
+
+def get_horz_seam(minVals, minPath):
+    path = np.zeros(minPath.shape,dtype=int)
+    minSpot = np.argmin(minVals[:,minVals.shape[1]-1])
+    for x in range(minVals.shape[1]-1,-1,-1):
+        path[minSpot, x] = 1
+        minSpot = minSpot + minPath[minSpot, x]
+    return path
+# end function
 
 image = load_img("test.jpg")
 
 entropy = entropy_sobel(image)
 minValsV, minPathV = find_vert_seam(entropy)
 minValsH, minPathH = find_horz_seam(entropy)
+actMinPathV = get_vert_seam(minValsV, minPathV)
+actMinPathH = get_horz_seam(minValsH, minPathH)
 #cv.imshow("",entropy)
 #cv.waitKey(0)
 
@@ -115,5 +150,18 @@ for y in range(0,minPathH.shape[0]):
         line += "" + str(minPathH[y, x]) + "\t\t"
     f.write(line + "\n")
 
+f.write("\n" + "ActualMinPathV:" + "\n")
+for y in range(0,actMinPathV.shape[0]):
+    line = ""
+    for x in range(0,actMinPathV.shape[1]):
+        line += "" + str(actMinPathV[y, x]) + "\t\t"
+    f.write(line + "\n")
+
+f.write("\n" + "ActualMinPathH:" + "\n")
+for y in range(0,actMinPathH.shape[0]):
+    line = ""
+    for x in range(0,actMinPathH.shape[1]):
+        line += "" + str(actMinPathH[y, x]) + "\t\t"
+    f.write(line + "\n")
 
 f.close()
