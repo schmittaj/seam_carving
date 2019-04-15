@@ -8,9 +8,31 @@ def load_img(imgName):
 # end function
 
 
+def saliency(image):
+    saliency = cv.saliency.StaticSaliencySpectralResidual_create()
+    (success, saliencyMap) = saliency.computeSaliency(image.astype(np.uint8))
+    saliencyMap = (saliencyMap * 255).astype("uint8")
+    return saliencyMap
+# end function
+
+
 def entropy_sobel(image):
-    img = cv.Sobel(image,-1,1,1)
+    img = cv.Sobel(image.astype(float), -1, 1, 1)
     return img
+# end function
+
+
+def entropy_scharr(image):
+    imgx = cv.Scharr(image.astype(float), cv.CV_64F, 1, 0)
+    imgy = cv.Scharr(image.astype(float), cv.CV_64F, 0, 1)
+    img = cv.addWeighted(imgx, 0.5, imgy, 0.5, 0)
+    return img
+# end function
+
+
+def entropy_laplacian(image):
+    lap = cv.Laplacian(image.astype(float), cv.CV_64F)
+    return lap
 # end function
 
 
@@ -18,12 +40,19 @@ def find_vert_seam(entropyImage):
     minImg = np.zeros((entropyImage.shape[0], entropyImage.shape[1]), dtype=int)
     minPath = np.zeros((entropyImage.shape[0], entropyImage.shape[1]), dtype=int)
     for x in range(0, entropyImage.shape[1]):
-        minImg[0,x] = entropyImage[0, x, 0] + entropyImage[0, x, 1] + entropyImage[0, x, 2]
+        if entropyImage[0, x].shape == ():
+            minImg[0, x] = entropyImage[0, x]
+        else:
+            minImg[0,x] = entropyImage[0, x, 0] + entropyImage[0, x, 1] + entropyImage[0, x, 2]
 
     # going top to bottom
     for y in range(1, entropyImage.shape[0]):
         for x in range(0,entropyImage.shape[1]):
-            pixent = int(entropyImage[y, x, 0]) + int(entropyImage[y, x, 1]) + int(entropyImage[y, x, 2])
+            if entropyImage[y, x].shape == ():
+                pixent = entropyImage[y, x]
+            else:
+                pixent = int(entropyImage[y, x, 0]) + int(entropyImage[y, x, 1]) + int(entropyImage[y, x, 2])
+
             minent, minpathVal = find_min_vert(entropyImage.shape[1],x,y,minImg)
             minPath[y, x] = minpathVal
             minImg[y, x] = minent + pixent
@@ -36,12 +65,19 @@ def find_horz_seam(entropyImage):
     minImg = np.zeros((entropyImage.shape[0], entropyImage.shape[1]), dtype=int)
     minPath = np.zeros((entropyImage.shape[0], entropyImage.shape[1]), dtype=int)
     for y in range(0, entropyImage.shape[0]):
-        minImg[y,0] = entropyImage[y, 0, 0] + entropyImage[y, 0, 1] + entropyImage[y, 0, 2]
+        if(entropyImage[y,0].shape == ()):
+            minImg[y,0] = entropyImage[y,0]
+        else:
+            minImg[y,0] = entropyImage[y, 0, 0] + entropyImage[y, 0, 1] + entropyImage[y, 0, 2]
 
     # going left to right
     for x in range(1, entropyImage.shape[1]):
         for y in range(0,entropyImage.shape[0]):
-            pixent = int(entropyImage[y, x, 0]) + int(entropyImage[y, x, 1]) + int(entropyImage[y, x, 2])
+            if entropyImage[y, x].shape == ():
+                pixent = entropyImage[y, x]
+            else:
+                pixent = int(entropyImage[y, x, 0]) + int(entropyImage[y, x, 1]) + int(entropyImage[y, x, 2])
+
             minent, minpathVal = find_min_horz(entropyImage.shape[0],x,y,minImg)
             minPath[y, x] = minpathVal
             minImg[y, x] = minent + pixent
@@ -116,26 +152,27 @@ def get_horz_seam(minVals, minPath):
 
 image = load_img("japan.jpg")
 
-for i in range(0,20):
+
+for i in range(0,40):
     print(i)
 
-    entropy = entropy_sobel(image.astype(float)) # Sobel needs array as float
-    minValsH, minPathH = find_horz_seam(entropy)
-    actMinPathH = get_horz_seam(minValsH, minPathH)
-    image = remove_horz_seam(image, actMinPathH)
+    if i%2 == 0:
+        entropy = saliency(image)
+        #entropy = entropy_sobel(image)
+        minValsH, minPathH = find_horz_seam(entropy)
+        actMinPathH = get_horz_seam(minValsH, minPathH)
+        image = remove_horz_seam(image, actMinPathH)
+    else:
+        entropy = saliency(image)
+        #entropy = entropy_sobel(image)
+        minValsV, minPathV = find_vert_seam(entropy)
+        actMinPathV = get_vert_seam(minValsV, minPathV)
+        image = remove_vert_seam(image, actMinPathV)
 
-for i in range(0,20):
-    print(i)
-
-    entropy = entropy_sobel(image.astype(float)) # Sobel needs array as float
-    minValsV, minPathV = find_vert_seam(entropy)
-    actMinPathV = get_vert_seam(minValsV, minPathV)
-    image = remove_vert_seam(image, actMinPathV)
-
-cv.imwrite("output.jpg",image)
-showim = cv.imread("output.jpg")
-cv.imshow("", showim)
-cv.waitKey(0)
+cv.imwrite("output.jpg",image)    # there's a bug with opencv that isn't letting us show the new image directly
+#showim = cv.imread("output.jpg")  # so have to write to a file and read it back in to show
+#cv.imshow("", showim)
+#cv.waitKey(0)
 
 
 # f = open("output.txt", "w")
