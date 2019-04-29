@@ -1,5 +1,18 @@
 import cv2 as cv
 import numpy as np
+import tkinter as tk
+from tkinter import *
+from tkinter.filedialog import askopenfilename
+
+
+
+global entropyFunc
+global win
+global frame
+global mask
+global image
+global topLeft
+global bottomRight
 
 
 def load_img(imgName):
@@ -8,7 +21,7 @@ def load_img(imgName):
 # end function
 
 
-def saliency(image):
+def entropy_saliency(image):
     saliency = cv.saliency.StaticSaliencySpectralResidual_create()
     (success, saliencyMap) = saliency.computeSaliency(image.astype(np.uint8))
     saliencyMap = (saliencyMap * 255).astype("uint8")
@@ -61,11 +74,39 @@ def find_vert_seam(entropyImage):
 # end function
 
 
+def apply_entropy_mask(entropyImage, mask):
+    newEnt = np.zeros((entropyImage.shape[0], entropyImage.shape[1]), dtype=int)
+    for y in range(0, entropyImage.shape[0]):
+        for x in range(0, entropyImage.shape[1]):
+            if entropyImage[y, x].shape == ():
+                if mask[y, x] == 1:
+                    newEnt[y, x] = 255
+                elif mask[y, x] == -1:
+                    newEnt[y, x] = 0
+                else:
+                    newEnt[y, x] = entropyImage[y, x]
+            else:
+                if mask[y, x] == 1:
+                    newEnt[y, x, 0] = 255
+                    newEnt[y, x, 1] = 255
+                    newEnt[y, x, 2] = 255
+                elif mask[y, x] == -1:
+                    newEnt[y, x, 0] = 0
+                    newEnt[y, x, 1] = 0
+                    newEnt[y, x, 2] = 0
+                else:
+                    newEnt[y, x, 0] = entropyImage[y, x, 0]
+                    newEnt[y, x, 1] = entropyImage[y, x, 1]
+                    newEnt[y, x, 2] = entropyImage[y, x, 2]
+    return newEnt
+# end function
+
+
 def find_horz_seam(entropyImage):
     minImg = np.zeros((entropyImage.shape[0], entropyImage.shape[1]), dtype=int)
     minPath = np.zeros((entropyImage.shape[0], entropyImage.shape[1]), dtype=int)
     for y in range(0, entropyImage.shape[0]):
-        if(entropyImage[y,0].shape == ()):
+        if entropyImage[y,0].shape == ():
             minImg[y,0] = entropyImage[y,0]
         else:
             minImg[y,0] = entropyImage[y, 0, 0] + entropyImage[y, 0, 1] + entropyImage[y, 0, 2]
@@ -128,6 +169,32 @@ def remove_horz_seam(image, pix2remove):
                 newY += 1
     return newImg
 # end function
+
+def remove_vert_seam_mask(image, pix2remove):
+    newImg = np.zeros((image.shape[0], image.shape[1]-1),dtype=int)
+
+    for y in range(0,image.shape[0]):
+        newX = 0
+        for x in range(0, image.shape[1]):
+            if pix2remove[y, x] == 0:
+                newImg[y, newX] = image[y, x]
+                newX += 1
+    return newImg
+# end function
+
+
+def remove_horz_seam_mask(image, pix2remove):
+    newImg = np.zeros((image.shape[0]-1, image.shape[1]),dtype=int)
+
+    for x in range(0,image.shape[1]):
+        newY = 0
+        for y in range(0, image.shape[0]):
+            if pix2remove[y, x] == 0:
+                newImg[newY, x] = image[y, x]
+                newY += 1
+    return newImg
+# end function
+
 
 
 # def add_vert_seam(image, pix2add):
@@ -264,12 +331,12 @@ def perform_removal(entropy_function, image, linesToRemove):  # alternates remov
             entropy = entropy_function(img)
             minValsH, minPathH = find_horz_seam(entropy)
             actMinPathH = get_horz_seam(minValsH, minPathH)
-            img = remove_horz_seam(image, actMinPathH)
+            img = remove_horz_seam(img, actMinPathH)
         else:
             entropy = entropy_function(img)
             minValsV, minPathV = find_vert_seam(entropy)
             actMinPathV = get_vert_seam(minValsV, minPathV)
-            img = remove_vert_seam(image, actMinPathV)
+            img = remove_vert_seam(img, actMinPathV)
     return img
 # end function
 
@@ -283,12 +350,12 @@ def perform_addition(entropy_function, image, linesToAdd):  # alternates adding 
             entropy = entropy_function(img)
             minValsH, minPathH = find_horz_seam(entropy)
             actMinPathH = get_horz_seam(minValsH, minPathH)
-            img = add_horz_seam(image, actMinPathH)
+            img = add_horz_seam(img, actMinPathH)
         else:
             entropy = entropy_function(img)
             minValsV, minPathV = find_vert_seam(entropy)
             actMinPathV = get_vert_seam(minValsV, minPathV)
-            img = add_vert_seam(image, actMinPathV)
+            img = add_vert_seam(img, actMinPathV)
     return img
 # end function
 
@@ -299,7 +366,7 @@ def perform_addition_horz(entropy_function, image, linesToAdd):
         entropy = entropy_function(img)
         minValsH, minPathH = find_horz_seam(entropy)
         actMinPathH = get_horz_seam(minValsH, minPathH)
-        img = add_horz_seam(image, actMinPathH)
+        img = add_horz_seam(img, actMinPathH)
     return img
 # end function
 
@@ -311,7 +378,7 @@ def perform_addition_vert(entropy_function, image, linesToAdd):
         entropy = entropy_function(img)
         minValsV, minPathV = find_vert_seam(entropy)
         actMinPathV = get_vert_seam(minValsV, minPathV)
-        img = add_vert_seam(image, actMinPathV)
+        img = add_vert_seam(img, actMinPathV)
     return img
 # end function
 
@@ -323,7 +390,7 @@ def perform_removal_horz(entropy_function, image, linesToRemove):
         entropy = entropy_function(img)
         minValsH, minPathH = find_horz_seam(entropy)
         actMinPathH = get_horz_seam(minValsH, minPathH)
-        img = remove_horz_seam(image, actMinPathH)
+        img = remove_horz_seam(img, actMinPathH)
     return img
 # end function
 
@@ -335,14 +402,133 @@ def perform_removal_vert(entropy_function, image, linesToRemove):
         entropy = entropy_function(img)
         minValsV, minPathV = find_vert_seam(entropy)
         actMinPathV = get_vert_seam(minValsV, minPathV)
-        img = remove_vert_seam(image, actMinPathV)
+        img = remove_vert_seam(img, actMinPathV)
     return img
 # end function
 
 
-image = load_img("japan.jpg")
-image = perform_addition(saliency, image, 40)
-cv.imwrite("output.jpg",image)
+def perform_removal_horz_with_mask(entropy_function, mask, image, linesToRemove):
+    img = np.copy(image)
+    msk = np.copy(mask)
+    for i in range(0,linesToRemove):
+        print(i)
+        entropy = entropy_function(img)
+        entropy = apply_entropy_mask(entropy, msk)
+        minValsH, minPathH = find_horz_seam(entropy)
+        actMinPathH = get_horz_seam(minValsH, minPathH)
+        msk = remove_horz_seam_mask(msk, actMinPathH)
+        img = remove_horz_seam(img, actMinPathH)
+    return img, msk
+# end function
+
+
+def perform_removal_vert_with_mask(entropy_function, mask, image, linesToRemove):
+    img = np.copy(image)
+    msk = np.copy(mask)
+    for i in range(0,linesToRemove):
+        print(i)
+        entropy = entropy_function(img)
+        entropy = apply_entropy_mask(entropy, msk)
+        minValsV, minPathV = find_vert_seam(entropy)
+        actMinPathV = get_vert_seam(minValsV, minPathV)
+        msk = remove_vert_seam_mask(msk, actMinPathV)
+        img = remove_vert_seam(img, actMinPathV)
+    return img, msk
+# end function
+
+
+def close():
+    exit(0)
+# end function
+
+
+def bound(event, x, y, flags, param):
+
+    global topLeft
+    global bottomRight
+
+    done = False
+    if event == cv.EVENT_LBUTTONDOWN:
+        topLeft = [x, y]
+    elif event == cv.EVENT_LBUTTONUP:
+        bottomRight = [x, y]
+        done = True
+
+    if(done):
+        global mask
+        mask = np.zeros((image.shape[0], image.shape[1]), dtype=int)
+        for a in range(topLeft[1],bottomRight[1]):
+            for b in range(topLeft[0],bottomRight[0]):
+                mask[a, b] = -1
+        print((bottomRight[0]-topLeft[0]))
+        out, msk = perform_removal_vert_with_mask(entropy_saliency, mask, image, (bottomRight[0]-topLeft[0]))
+        cv.imwrite("maskOut.jpg", out)
+        image2 = load_img("maskOut.jpg")
+        cv.imshow('', image2)
+        print("Done")
+# end function
+
+
+def load_image():
+    filename = askopenfilename()
+    global image
+    image = load_img(filename)
+    cv.imshow('', image)
+    cv.setMouseCallback('', bound)
+# end function
+
+
+#############
+# Main
+#############
+
+win = tk.Tk()
+win.title("Seam Carving")
+win.geometry('1000x800')
+menu_bar = Menu(win)
+win.config(menu=menu_bar)
+file_menu = Menu(menu_bar, tearoff=0)
+file_menu.add_command(label="Load Image", command=load_image)
+file_menu.add_command(label="Save Image")  # ,command=save_image)
+file_menu.add_command(label="Exit", command=close)
+menu_bar.add_cascade(label="File", menu=file_menu)
+ent = entropy_sobel
+entropy_menu = Menu(menu_bar, tearoff=0)
+entropy_menu.add_radiobutton(label="Laplacian", variable=ent, value=entropy_laplacian)
+entropy_menu.add_radiobutton(label="Saliency",  variable=ent, value=entropy_saliency)
+entropy_menu.add_radiobutton(label="Scharr",  variable=ent, value=entropy_scharr)
+entropy_menu.add_radiobutton(label="Sobel",  variable=ent, value=entropy_sobel)
+menu_bar.add_cascade(label="Entropy Measure", menu=entropy_menu)
+
+
+win.mainloop()
+
+# while 1:
+#     win.update_idletasks()
+#     win.update()
+
+# image = load_img("test2.jpg")
+# ent = entropy_saliency(image)
+# mask = np.array([[0,0,0,0,0,0,0,0,0,0],
+#                  [0,0,0,0,0,0,0,0,0,0],
+#                  [0,0,0,0,0,0,-1,-1,0,0],
+#                  [0,0,0,0,0,0,-1,-1,0,0],
+#                  [0,0,0,0,0,0,0,0,0,0],
+#                  [0,0,0,0,0,0,0,0,0,0],
+#                  [0,0,0,0,0,0,0,0,0,0],
+#                  [0,0,0,0,0,0,0,0,0,0],
+#                  [0,0,0,0,0,0,0,0,0,0],
+#                  [0,0,0,0,0,0,0,0,0,0]])
+# newEnt = apply_entropy_mask(ent, mask)
+# image, mask = perform_removal_vert_with_mask(entropy_saliency,mask,image,2)
+# image, mask = perform_removal_horz_with_mask(entropy_saliency,mask,image,2)
+
+#cv.imwrite("output.jpg",image)
+
+#image = load_img("dragon.jpg")
+#image = perform_addition(saliency, image, 40)
+#image = perform_removal(saliency, image, 40)
+#cv.imwrite("dragoadd.jpg",image)
 
 # there's a bug with opencv that isn't letting us show the new image directly
 #showim = cv.imread("output.jpg")  # so have to write to a file and read it back in to show
@@ -350,6 +536,8 @@ cv.imwrite("output.jpg",image)
 #cv.waitKey(0)
 
 
+
+# Text file output for debugging
 # f = open("output.txt", "w")
 #
 #
