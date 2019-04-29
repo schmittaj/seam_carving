@@ -5,7 +5,6 @@ from tkinter import *
 from tkinter.filedialog import askopenfilename
 
 
-
 global entropyFunc
 global win
 global frame
@@ -461,7 +460,7 @@ def bound(event, x, y, flags, param):
             for b in range(topLeft[0],bottomRight[0]):
                 mask[a, b] = -1
         print((bottomRight[0]-topLeft[0]))
-        out, msk = perform_removal_vert_with_mask(entropy_saliency, mask, image, (bottomRight[0]-topLeft[0]))
+        out, msk = perform_removal_vert_with_mask(entropyFunc, mask, image, (bottomRight[0]-topLeft[0]))
         cv.imwrite("maskOut.jpg", out)
         image2 = load_img("maskOut.jpg")
         cv.imshow('', image2)
@@ -492,16 +491,17 @@ file_menu.add_command(label="Load Image", command=load_image)
 file_menu.add_command(label="Save Image")  # ,command=save_image)
 file_menu.add_command(label="Exit", command=close)
 menu_bar.add_cascade(label="File", menu=file_menu)
-ent = entropy_sobel
+entropyFunc = entropy_saliency
 entropy_menu = Menu(menu_bar, tearoff=0)
-entropy_menu.add_radiobutton(label="Laplacian", variable=ent, value=entropy_laplacian)
-entropy_menu.add_radiobutton(label="Saliency",  variable=ent, value=entropy_saliency)
-entropy_menu.add_radiobutton(label="Scharr",  variable=ent, value=entropy_scharr)
-entropy_menu.add_radiobutton(label="Sobel",  variable=ent, value=entropy_sobel)
+entropy_menu.add_radiobutton(label="Laplacian", variable=entropyFunc, value=entropy_laplacian)
+entropy_menu.add_radiobutton(label="Saliency",  variable=entropyFunc, value=entropy_saliency)
+entropy_menu.add_radiobutton(label="Scharr",  variable=entropyFunc, value=entropy_scharr)
+entropy_menu.add_radiobutton(label="Sobel",  variable=entropyFunc, value=entropy_sobel)
 menu_bar.add_cascade(label="Entropy Measure", menu=entropy_menu)
 
 
 win.mainloop()
+
 
 # while 1:
 #     win.update_idletasks()
