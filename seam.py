@@ -1,9 +1,5 @@
 import cv2 as cv
 import numpy as np
-import tkinter as tk
-from tkinter import *
-from tkinter.filedialog import askopenfilename
-
 
 
 global entropyFunc
@@ -194,26 +190,6 @@ def remove_horz_seam_mask(image, pix2remove):
                 newY += 1
     return newImg
 # end function
-
-
-
-# def add_vert_seam(image, pix2add):
-#     newImg = np.zeros((image.shape[0], image.shape[1]+1, 3),dtype=int)
-#
-#     for y in range(0,newImg.shape[0]):
-#         oldX = 0
-#         newX = 0
-#         for x in range(0, image.shape[1]):
-#             oldPix = image[y, oldX]
-#             newImg[y, newX] = oldPix
-#             newX += 1
-#             if pix2add[y, oldX] == 1:
-#                 newX += 1
-#                 newPix = calcAvgPixVert(y, oldX, image, image.shape[0]-1, image.shape[1]-1)
-#                 newImg[y, newX] = newPix  #THIS ASSIGNMENT
-#             oldX += 1
-#     return newImg
-# # end function
 
 
 def add_vert_seam(image, pix2add):
@@ -437,11 +413,6 @@ def perform_removal_vert_with_mask(entropy_function, mask, image, linesToRemove)
 # end function
 
 
-def close():
-    exit(0)
-# end function
-
-
 def bound(event, x, y, flags, param):
 
     global topLeft
@@ -478,31 +449,6 @@ def load_image():
 # end function
 
 
-#############
-# Main
-#############
-
-win = tk.Tk()
-win.title("Seam Carving")
-win.geometry('1000x800')
-menu_bar = Menu(win)
-win.config(menu=menu_bar)
-file_menu = Menu(menu_bar, tearoff=0)
-file_menu.add_command(label="Load Image", command=load_image)
-file_menu.add_command(label="Save Image")  # ,command=save_image)
-file_menu.add_command(label="Exit", command=close)
-menu_bar.add_cascade(label="File", menu=file_menu)
-ent = entropy_sobel
-entropy_menu = Menu(menu_bar, tearoff=0)
-entropy_menu.add_radiobutton(label="Laplacian", variable=ent, value=entropy_laplacian)
-entropy_menu.add_radiobutton(label="Saliency",  variable=ent, value=entropy_saliency)
-entropy_menu.add_radiobutton(label="Scharr",  variable=ent, value=entropy_scharr)
-entropy_menu.add_radiobutton(label="Sobel",  variable=ent, value=entropy_sobel)
-menu_bar.add_cascade(label="Entropy Measure", menu=entropy_menu)
-
-
-win.mainloop()
-
 # while 1:
 #     win.update_idletasks()
 #     win.update()
@@ -525,10 +471,10 @@ win.mainloop()
 
 #cv.imwrite("output.jpg",image)
 
-#image = load_img("dragon.jpg")
-#image = perform_addition(saliency, image, 40)
+image = load_img("dragon.jpg")
+image = perform_addition(saliency, image, 40)
 #image = perform_removal(saliency, image, 40)
-#cv.imwrite("dragoadd.jpg",image)
+cv.imwrite("dragoadd.jpg",image)
 
 # there's a bug with opencv that isn't letting us show the new image directly
 #showim = cv.imread("output.jpg")  # so have to write to a file and read it back in to show
